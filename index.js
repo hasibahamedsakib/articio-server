@@ -74,7 +74,34 @@ async function run() {
       const result = await studentsCollections.insertOne(studentsInfo);
       res.send(result);
     });
+    // get all instructors
+    app.get("/instructors", verifyJWT, async (req, res) => {
+      const query = { role: "instructor" };
+      const instructors = await studentsCollections.find(query).toArray();
+      res.send(instructors);
+    });
+    // get data by role
+    // check user by role of admin
+    app.get("/students/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      // console.log(email);
+      // console.log(req.decoded.email);
 
+      if (req.decoded.email !== email) {
+        return res
+          .status(401)
+          .send({ error: true, message: "unauthorize user" });
+      }
+      const user = await studentsCollections.findOne(query);
+
+      if (user?.role == "instructor") {
+        const result = { instructor: user?.role == "instructor" };
+        return res.send(result);
+      }
+      const result = { admin: user?.role == "admin" };
+      res.send(result);
+    });
     // admin user info
     app.patch("/student/admin/:id", async (req, res) => {
       const id = req.params.id;
@@ -109,7 +136,7 @@ async function run() {
       res.send(result);
     });
     // Instructors
-    app.get("/instructors", async (req, res) => {
+    app.get("/popular-instructors", async (req, res) => {
       const result = await instructorsCollections
         .find()
         .sort({ enrolled: -1 })
