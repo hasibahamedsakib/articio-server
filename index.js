@@ -75,8 +75,15 @@ async function run() {
       res.send(result);
     });
 
+    // get all instructors
+    app.get("/instructors", async (req, res) => {
+      const query = { role: "instructor" };
+      const instructors = await studentsCollections.find(query).toArray();
+      res.send(instructors);
+    });
+
     // get data by role
-    // check user by role of admin
+
     app.get("/students/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -94,6 +101,7 @@ async function run() {
       const result = { admin: user?.role == "admin" };
       res.send(result);
     });
+
     // admin user info
     app.patch("/student/admin/:id", async (req, res) => {
       const id = req.params.id;
@@ -119,15 +127,40 @@ async function run() {
       res.send(result);
     });
 
-    // get all instructors
-    app.get("/instructors", async (req, res) => {
-      const query = { role: "instructor" };
-      const instructors = await studentsCollections.find(query).toArray();
-      res.send(instructors);
+    // get all approved class
+    app.get("/classes", async (req, res) => {
+      const query = { status: "approve" };
+      const result = await classesCollections.find(query).toArray();
+      res.send(result);
+    });
+
+    // update classes approve status
+    app.patch("/classes/approve/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approve",
+        },
+      };
+      const result = await classesCollections.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    // update classes approve status
+    app.patch("/classes/deny/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "deny",
+        },
+      };
+      const result = await classesCollections.updateOne(filter, updateDoc);
+      res.send(result);
     });
 
     // get class
-    app.get("/classes", async (req, res) => {
+    app.get("/popular-classes", async (req, res) => {
       const result = await classesCollections
         .find()
         .sort({ Enrolled: -1 })
@@ -142,6 +175,7 @@ async function run() {
       const result = await classesCollections.insertOne(classes);
       res.send(result);
     });
+    //
 
     // Instructors
     app.get("/popular-instructors", async (req, res) => {
