@@ -74,20 +74,12 @@ async function run() {
       const result = await studentsCollections.insertOne(studentsInfo);
       res.send(result);
     });
-    // get all instructors
-    app.get("/instructors", verifyJWT, async (req, res) => {
-      const query = { role: "instructor" };
-      const instructors = await studentsCollections.find(query).toArray();
-      res.send(instructors);
-    });
+
     // get data by role
     // check user by role of admin
     app.get("/students/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
-      // console.log(email);
-      // console.log(req.decoded.email);
-
       if (req.decoded.email !== email) {
         return res
           .status(401)
@@ -126,7 +118,15 @@ async function run() {
       const result = await studentsCollections.updateOne(filter, updateDoc);
       res.send(result);
     });
-    // Students
+
+    // get all instructors
+    app.get("/instructors", async (req, res) => {
+      const query = { role: "instructor" };
+      const instructors = await studentsCollections.find(query).toArray();
+      res.send(instructors);
+    });
+
+    // get class
     app.get("/classes", async (req, res) => {
       const result = await classesCollections
         .find()
@@ -135,6 +135,14 @@ async function run() {
         .toArray();
       res.send(result);
     });
+
+    // post class by instructor
+    app.post("/classes", async (req, res) => {
+      const classes = req.body;
+      const result = await classesCollections.insertOne(classes);
+      res.send(result);
+    });
+
     // Instructors
     app.get("/popular-instructors", async (req, res) => {
       const result = await instructorsCollections
