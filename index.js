@@ -235,6 +235,14 @@ async function run() {
       res.send(result);
     });
 
+    // delete selected class
+    app.delete("/selected/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await selectedCollections.deleteOne(query);
+      res.send(result);
+    });
+
     // Instructors
     app.get("/popular-instructors", async (req, res) => {
       const result = await instructorsCollections
