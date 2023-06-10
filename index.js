@@ -49,6 +49,7 @@ async function run() {
     const studentsCollections = DB.collection("students");
     const instructorsCollections = DB.collection("instructors");
     const classesCollections = DB.collection("classes");
+    const selectedCollections = DB.collection("selected");
 
     // JWT-STEPS-1 CREATE A JWT TOKEN
     const secret = process.env.ACCESS_TOKEN_SECRET;
@@ -128,12 +129,37 @@ async function run() {
     });
 
     // get all approved class
+    app.get("/all-classes", verifyJWT, async (req, res) => {
+      const result = await classesCollections.find().toArray();
+      res.send(result);
+    });
+    // get all approved class
     app.get("/classes", async (req, res) => {
       const query = { status: "approve" };
       const result = await classesCollections.find(query).toArray();
       res.send(result);
     });
+    // get All instructor Class
+    app.get("/my-classes/:email", async (req, res) => {
+      const query = { instructorEmail: req.params.email };
+      const result = await classesCollections.find(query).toArray();
+      res.send(result);
+    });
 
+    // update classes approve status
+    app.patch("/classes/feedback/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const feedback = req.headers.feedback;
+      console.log(req.headers.feedback);
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          feedback: feedback,
+        },
+      };
+      const result = await classesCollections.updateOne(filter, updateDoc);
+      res.send(result);
+    });
     // update classes approve status
     app.patch("/classes/approve/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
@@ -175,7 +201,13 @@ async function run() {
       const result = await classesCollections.insertOne(classes);
       res.send(result);
     });
-    //
+
+    // save  selected class
+    app.post("/selected", async (req, res) => {
+      const selected = req.body;
+      const result = await selectedCollections.insertOne(selected);
+      res.send(result);
+    });
 
     // Instructors
     app.get("/popular-instructors", async (req, res) => {
