@@ -87,6 +87,9 @@ async function run() {
 
     app.get("/students/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
+      if (!email) {
+        return res.send([]);
+      }
       const query = { email: email };
       if (req.decoded.email !== email) {
         return res
@@ -141,7 +144,11 @@ async function run() {
     });
     // get All instructor Class
     app.get("/my-classes/:email", async (req, res) => {
-      const query = { instructorEmail: req.params.email };
+      const email = req.params.email;
+      if (!email) {
+        return res.send([]);
+      }
+      const query = { instructorEmail: email };
       const result = await classesCollections.find(query).toArray();
       res.send(result);
     });
@@ -150,7 +157,7 @@ async function run() {
     app.patch("/classes/feedback/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const feedback = req.headers.feedback;
-      console.log(req.headers.feedback);
+      // console.log(req.headers.feedback);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
@@ -202,8 +209,27 @@ async function run() {
       res.send(result);
     });
 
+    // get all selected Class by email
+    app.get("/selected/:email", async (req, res) => {
+      const email = req.params.email;
+      if (!email) {
+        return res.send([]);
+      }
+      const query = { email: email };
+      const result = await selectedCollections.find(query).toArray();
+      res.send(result);
+    });
+
     // save  selected class
-    app.post("/selected", async (req, res) => {
+    app.post("/selected", verifyJWT, async (req, res) => {
+      const classId = req.body.classId;
+      const query = { email: req.body.email, classId: classId };
+      const existingData = await selectedCollections.find(query).toArray();
+      const getClass = existingData.map((data) => data.classId == classId);
+
+      if (getClass != [] && getClass[0] == true) {
+        return res.send({ message: "class already added" });
+      }
       const selected = req.body;
       const result = await selectedCollections.insertOne(selected);
       res.send(result);
