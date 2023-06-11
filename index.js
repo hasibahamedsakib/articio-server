@@ -32,7 +32,7 @@ app.get("/", (req, res) => {
   res.send("<h1>Server is Running..</h1>");
 });
 
-const uri = process.env.DB_URI;
+const uri = process.env.DB_URI_V2;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -52,6 +52,7 @@ async function run() {
     const instructorsCollections = DB.collection("instructors");
     const classesCollections = DB.collection("classes");
     const selectedCollections = DB.collection("selected");
+    const paymentsCollections = DB.collection("payments");
 
     // JWT-STEPS-1 CREATE A JWT TOKEN
     const secret = process.env.ACCESS_TOKEN_SECRET;
@@ -263,6 +264,93 @@ async function run() {
         .collation({ locale: "en_US", numericOrdering: true })
         .toArray();
       res.send(result);
+    });
+
+    // Stripe Payment
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = parseFloat(price * 100);
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    // payment saved to db
+    // app.post("/payments", async (req, res) => {
+    //   const paymentInfo = req.body;
+    //   const result = await paymentsCollections.insertOne(paymentInfo);
+
+    //   const query = {
+    //     _id: new ObjectId(paymentInfo.selectClassId),
+    //   };
+    //   const deletedResult = await selectedCollections.deleteOne(query);
+    //   // update code
+    //   const classQuery = { _id: new ObjectId(paymentInfo.classId) };
+
+    //   const classesUpdate = {
+    //     $inc: {
+    //       // Increment the value of the first property by 1
+    //       enrolled: 1,
+    //       // Decrement the value of the second property by 1
+    //       availableSeats: -1,
+    //     },
+    //   };
+
+    //   const classesUpdateResult = await classesCollections.updateOne(
+    //     classQuery,
+    //     classesUpdate
+    //   );
+
+    //   res.send({ result, deletedResult, classesUpdateResult });
+    // });
+
+    app.post("/payments", async (req, res) => {
+      const paymentInfo = req.body;
+      const result = await paymentsCollections.insertOne(paymentInfo);
+
+      const query = {
+        _id: new ObjectId(paymentInfo.selectClassId),
+      };
+      const deletedResult = await selectedCollections.deleteOne(query);
+
+      const classQuery = { _id: new ObjectId(paymentInfo.classId) };
+
+      const classesDocument = await classesCollections.findOne(classQuery);
+
+      if (classesDocument) {
+        const availableSeats = parseInt(classesDocument.availableSeats);
+
+        if (!isNaN(availableSeats)) {
+          classesDocument.enrolled += 1;
+
+          classesDocument.availableSeats = (availableSeats - 1).toString();
+
+          // Save the updated document back to the database
+          const classesUpdateResult = await classesCollections.updateOne(
+            classQuery,
+            {
+              $set: {
+                enrolled: classesDocument.enrolled,
+                availableSeats: classesDocument.availableSeats,
+              },
+            }
+          );
+
+          res.send({ result, deletedResult, classesUpdateResult });
+        } else {
+          res
+            .status(500)
+            .send("Error: 'availableSeats' field is not a numeric value");
+        }
+      } else {
+        res.status(404).send("Document not found");
+      }
     });
 
     // Send a ping to confirm a successful connection
