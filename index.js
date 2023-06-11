@@ -2,8 +2,10 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const app = express();
+
 const cors = require("cors");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 app.use(cors());
 app.use(express.json());
 
@@ -61,6 +63,16 @@ async function run() {
 
     app.get("/students", verifyJWT, async (req, res) => {
       const result = await studentsCollections.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/getStudents/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      if (!email) {
+        return res.send([]);
+      }
+      const result = await studentsCollections.find(query).toArray();
       res.send(result);
     });
 
