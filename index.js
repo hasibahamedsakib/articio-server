@@ -281,6 +281,18 @@ async function run() {
       });
     });
 
+    //  Get Enrolled Class
+
+    app.get("/enrolled/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+
+      const result = await paymentsCollections
+        .find(query)
+        .sort({ date: -1 })
+        .toArray();
+      res.send(result);
+    });
     // payment saved to db
     // app.post("/payments", async (req, res) => {
     //   const paymentInfo = req.body;
