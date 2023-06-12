@@ -32,7 +32,7 @@ app.get("/", (req, res) => {
   res.send("<h1>Server is Running..</h1>");
 });
 
-const uri = process.env.DB_URI_V2;
+const uri = process.env.DB_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -209,7 +209,7 @@ async function run() {
     app.get("/popular-classes", async (req, res) => {
       const result = await classesCollections
         .find()
-        .sort({ Enrolled: -1 })
+        .sort({ enrolled: -1 })
         .collation({ locale: "en_US", numericOrdering: true })
         .toArray();
       res.send(result);
@@ -293,34 +293,6 @@ async function run() {
         .toArray();
       res.send(result);
     });
-    // payment saved to db
-    // app.post("/payments", async (req, res) => {
-    //   const paymentInfo = req.body;
-    //   const result = await paymentsCollections.insertOne(paymentInfo);
-
-    //   const query = {
-    //     _id: new ObjectId(paymentInfo.selectClassId),
-    //   };
-    //   const deletedResult = await selectedCollections.deleteOne(query);
-    //   // update code
-    //   const classQuery = { _id: new ObjectId(paymentInfo.classId) };
-
-    //   const classesUpdate = {
-    //     $inc: {
-    //       // Increment the value of the first property by 1
-    //       enrolled: 1,
-    //       // Decrement the value of the second property by 1
-    //       availableSeats: -1,
-    //     },
-    //   };
-
-    //   const classesUpdateResult = await classesCollections.updateOne(
-    //     classQuery,
-    //     classesUpdate
-    //   );
-
-    //   res.send({ result, deletedResult, classesUpdateResult });
-    // });
 
     app.post("/payments", async (req, res) => {
       const paymentInfo = req.body;
