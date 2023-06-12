@@ -291,6 +291,7 @@ async function run() {
       const result = await paymentsCollections
         .find(query)
         .sort({ date: -1 })
+        .collation({ locale: "en_US", numericOrdering: true })
         .toArray();
       res.send(result);
     });
