@@ -210,6 +210,7 @@ async function run() {
       const result = await classesCollections
         .find()
         .sort({ enrolled: -1 })
+        .limit(6)
         .collation({ locale: "en_US", numericOrdering: true })
         .toArray();
       res.send(result);
